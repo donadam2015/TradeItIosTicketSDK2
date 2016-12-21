@@ -8,7 +8,7 @@ public enum TradeItErrorCode: Int {
     case oauthError = 700
 }
 
-extension TradeItErrorResult {
+extension TradeItErrorResult: Error {
     convenience init(title: String,
                      message: String = "Unknown response sent from the server.",
                      code: TradeItErrorCode = .systemError) {

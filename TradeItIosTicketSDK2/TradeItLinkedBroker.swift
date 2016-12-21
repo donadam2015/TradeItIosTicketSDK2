@@ -7,7 +7,7 @@ import PromiseKit
     var session: TradeItSession
     var linkedLogin: TradeItLinkedLogin
     private var linkedBrokerCache = TradeItLinkedBrokerCache()
-
+    private var authenticationPromise: Promise<Void>?
 
     public var brokerName: String {
         return self.linkedLogin.broker ?? ""
@@ -84,11 +84,18 @@ import PromiseKit
                 return
         }
 
-        if error.requiresAuthentication() {
-            self.authenticate(onSuccess: onSuccess, onSecurityQuestion: onSecurityQuestion, onFailure: onFailure)
-        } else {
-            onSuccess()
+        // TODO: Look at making TradeItErrorResult inherit from Error
+        let authenticationPromise = self.authenticationPromise ?? Promise { fulfill, reject in
+            if error.requiresAuthentication() {
+                self.authenticate(onSuccess: fulfill, onSecurityQuestion: onSecurityQuestion, onFailure: reject)
+            } else {
+                fulfill()
+            }
         }
+
+        authenticationPromise.then(execute: onSuccess).catch(execute: onFailure)
+
+        self.authenticationPromise = authenticationPromise
     }
 
     public func refreshAccountBalances(onFinished: @escaping () -> Void) {
